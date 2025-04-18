@@ -1,15 +1,16 @@
 // server.js
+// import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
 dotenv.config(); // Load environment variables from .env file
 import express from "express";
-import { Sequelize } from "sequelize";
+
+import bcrypt from "bcrypt";
+import User from "./models/User.js";
+import sequelize from "./config/database.js";
+import authRoutes from "./routes/authRoutes.js"; // Adjust the path as necessary
 
 const app = express();
 const port = process.env.PORT || 3002; // fallback if PORT isn't set
-const host = process.env.HOST || "localhost";
-const database = process.env.POSTGRES_DATABASE;
-const username = process.env.POSTGRES_USER;
-const password = process.env.POSTGRES_PASSWORD;
 
 // Middleware to parse JSON
 app.use(express.json());
@@ -19,21 +20,15 @@ app.get("/", (req, res) => {
   res.send("Hello, world!");
 });
 
-// Example POST route
-app.post("/data", (req, res) => {
-  const { name } = req.body;
-  res.send(`Received data for ${name}`);
-});
+app.use("/api/auth", authRoutes);
 
 async function connectToDatabase() {
-  const sequelize = new Sequelize(database, username, password, {
-    host: host,
-    dialect: "postgres",
-  });
-
   try {
     await sequelize.authenticate();
     console.log("Connection has been established successfully.");
+
+    await sequelize.sync({ force: false }); // Sync models with the database
+    console.log("Database synchronized successfully.");
   } catch (error) {
     console.error("Unable to connect to the database:", error);
   }
